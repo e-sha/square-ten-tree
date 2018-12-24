@@ -114,7 +114,6 @@ vector<pair<int, string>> solve(
     const vector<bool> &has_left_array,
     const vector<bool> &has_right_array) {
 
-  cerr << '[' << l << ", " << r << ']' << endl;
   if (k == 0)
     return vector<pair<int, string>>(1,
         make_pair(0, string(1, r.back() - l.back() + 1 + '0')));
@@ -124,27 +123,23 @@ vector<pair<int, string>> solve(
   size_t start = num_zeros[k];
   size_t stop = num_zeros[k+1];
   if (start > l_size)
-    k_left = has_left?"1":"0";
+    k_left = "0";
   else {
     auto j1 = l_size - start;
     auto j2 = l_size - min(stop, l_size);
     k_left = l.substr(j2, j1 - j2);
-    if (has_left)
-      k_left = add_1(k_left);
   }
   if (start > r_size)
-    k_right = has_right?"0":"1";
+    k_right = "0";
   else {
     auto j1 = r_size - start;
     auto j2 = r_size - min(stop, r_size);
     k_right = r.substr(j2, j1 - j2);
-    if (!has_right)
-      k_right = add_1(k_right);
   }
   auto cmp_res = cmp(k_left, k_right);
 
-  if (cmp_res == 1) {
-    // the left border is higher than the right one
+  if (cmp_res == 0 && (has_left || has_right)) {
+    // the left and the right border are the same
     // so nothing to do on this level
     return solve(l, r, k - 1,
         has_left && has_left_array[k-1],
@@ -161,8 +156,14 @@ vector<pair<int, string>> solve(
         num_zeros, has_left_array, has_right_array);
     res.insert(res.end(), left_res.begin(), left_res.end());
   }
-  if (cmp_res == -1)
-    res.emplace_back(k, sub(k_right, k_left));
+  if (cmp_res == -1) {
+    auto dif = sub(k_right, k_left);
+    if (!has_left)
+      dif = add_1(dif);
+    if (has_right)
+      dif = sub_1(dif);
+    res.emplace_back(k, dif);
+  }
   if (has_right) {
     auto left = k_right + string(start, '0');
     auto right_res = solve(left, r, k-1,
@@ -186,7 +187,7 @@ int main(int argc, char *argv[]) {
     num_zeros.push_back(num_zeros.back() * 2);
   auto has_left = test_border(l, num_zeros, '0');
   auto has_right = test_border(r, num_zeros, '9');
-  auto k = num_zeros.size() - 1;
+  auto k = num_zeros.size() - 2;
   auto res = solve(l, r, k, has_left[k], has_right[k], num_zeros, has_left, has_right);
   cout << res.size() << endl;
   for (auto &el: res)
