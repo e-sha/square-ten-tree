@@ -47,17 +47,12 @@ string sub(string f, string s) {
     auto j2 = n2 - i - 1;
     auto v1 = f[j1] - '0';
     auto v2 = s[j2] - '0';
-    if (v2 + d > v1) {
-      d = 1;
-      v1 += 10;
-    } else {
-      d = 0;
-    }
-    f[j1] = v1 - v2 - d + '0';
+    f[j1] = (10 + v1 - v2 - d) % 10 + '0';
+    d = v2 + d > v1? 1: 0;
   }
   for (; d != 0 && i < n1; ++i) {
     auto j = n1 - i - 1;
-    if (f[j] != 0) {
+    if (f[j] != '0') {
       d = 0;
       --f[j];
     } else
@@ -92,12 +87,15 @@ vector<bool> test_border(const string &s, const vector<int> &num_zeros, char c) 
   auto i = 1;
   auto flag = false;
   for (; i < n; ++i) {
-    for (auto j = num_zeros[i-1]; j < num_zeros[i] && j < k; ++j) {
+    if (c != '0' && num_zeros[i] > k) {
+      flag = true;
+      break;
+    }
+    for (auto j = num_zeros[i-1]; j < num_zeros[i] && j < k; ++j)
       if (s[k-j-1] != c) {
         flag = true;
         break;
       }
-    }
     if (flag)
       break;
   }
@@ -114,6 +112,7 @@ vector<pair<int, string>> solve(
     const vector<bool> &has_left_array,
     const vector<bool> &has_right_array) {
 
+  
   if (k == 0)
     return vector<pair<int, string>>(1,
         make_pair(0, string(1, r.back() - l.back() + 1 + '0')));
@@ -122,14 +121,14 @@ vector<pair<int, string>> solve(
   const size_t r_size = r.size();
   size_t start = num_zeros[k];
   size_t stop = num_zeros[k+1];
-  if (start > l_size)
+  if (start >= l_size)
     k_left = "0";
   else {
     auto j1 = l_size - start;
     auto j2 = l_size - min(stop, l_size);
     k_left = l.substr(j2, j1 - j2);
   }
-  if (start > r_size)
+  if (start >= r_size)
     k_right = "0";
   else {
     auto j1 = r_size - start;
@@ -156,7 +155,7 @@ vector<pair<int, string>> solve(
         num_zeros, has_left_array, has_right_array);
     res.insert(res.end(), left_res.begin(), left_res.end());
   }
-  if (cmp_res == -1) {
+  if (cmp_res < 1) {
     auto dif = sub(k_right, k_left);
     if (!has_left)
       dif = add_1(dif);
@@ -183,7 +182,7 @@ int main(int argc, char *argv[]) {
   // number of zeros in the step size
   vector<int> num_zeros(1, 0);
   num_zeros.push_back(1);
-  while (num_zeros.back() < n)
+  while (num_zeros.back() <= 1000000)
     num_zeros.push_back(num_zeros.back() * 2);
   auto has_left = test_border(l, num_zeros, '0');
   auto has_right = test_border(r, num_zeros, '9');
